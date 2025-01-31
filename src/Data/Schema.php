@@ -20,6 +20,7 @@ use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Data as LaravelData;
 use Spatie\LaravelData\DataCollection;
 use Spatie\LaravelData\Support\DataProperty;
+use Spatie\LaravelData\Support\DataPropertyType;
 use Spatie\LaravelData\Support\Transformation\TransformationContext;
 use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
@@ -47,30 +48,40 @@ class Schema extends Data
         $this->nullable = $this->nullable ? $this->nullable : null;
     }
 
-    public static function fromReflectionProperty(ReflectionProperty $reflection): self
+    public static function fromReflectionProperty(ReflectionProperty $property): self
     {
-        $property = DataProperty::create($reflection);
+        $type = $property->getType();
 
-        $type = $property->type;
-
-        /** @var null|string */
-        $data_class = $type->dataClass;
-
-        if ($type->isDataObject && $data_class) {
-            return self::fromData($data_class, $type->isNullable || $type->isOptional);
-        }
-        if ($type->isDataCollectable && $data_class) {
-            return self::fromDataCollection($data_class, $type->isNullable || $type->isOptional);
+        if (! $type instanceof ReflectionNamedType) {
+            throw new RuntimeException("Property {$property->getName()} has no type defined");
         }
 
-        /** @var null|string */
-        $other_type = array_keys($type->acceptedTypes)[0] ?? null;
+        $type_name = $type->getName();
+        $nullable = $type->allowsNull();
 
-        if (! $other_type) {
-            throw new RuntimeException("Parameter {$property->name} has no type defined");
+        if (is_a($type_name, LaravelData::class, true)) {
+            /** @var class-string<LaravelData> $type_name */
+            return self::fromData($type_name, $nullable);
         }
 
-        return self::fromDataReflection(type_name: $other_type, reflection: $reflection, nullable: $type->isNullable);
+        if (is_a($type_name, DataCollection::class, true)) {
+            // Try to get the collection type from attributes
+            $dataCollectionAttribute = $property->getAttributes(DataCollectionOf::class)[0] ?? null;
+
+            if ($dataCollectionAttribute) {
+                /** @var class-string<LaravelData>|null $collectionType */
+                $collectionType = $dataCollectionAttribute->getArguments()[0] ?? null;
+
+                if ($collectionType && is_a($collectionType, LaravelData::class, true)) {
+                    return self::fromDataCollection($collectionType, $nullable);
+                }
+            }
+
+            // Fallback to docblock if attribute not found
+            return self::fromListDocblock($property, $nullable);
+        }
+
+        return self::fromDataReflection(type_name: $type_name, reflection: $property, nullable: $nullable);
     }
 
     public static function fromDataReflection(
@@ -141,7 +152,7 @@ class Schema extends Data
     ): array {
         $array = array_filter(
             parent::transform($transformValues, $wrapExecutionType),
-            fn (mixed $value) => null !== $value,
+            fn(mixed $value) => null !== $value,
         );
 
         if ($array['ref'] ?? false) {
@@ -156,7 +167,7 @@ class Schema extends Data
 
         if (null !== $this->properties) {
             $array['properties'] = collect($this->properties->all())
-                ->mapWithKeys(fn (Property $property) => [$property->getName() => $property->type->transform($transformValues, $wrapExecutionType, $mapPropertyNames)])
+                ->mapWithKeys(fn(Property $property) => [$property->getName() => $property->type->transform($transformValues, $wrapExecutionType, $mapPropertyNames)])
                 ->toArray();
         }
 
