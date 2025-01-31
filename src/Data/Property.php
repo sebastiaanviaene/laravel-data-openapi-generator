@@ -8,14 +8,15 @@ use RuntimeException;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Data as LaravelData;
 use Spatie\LaravelData\DataCollection;
+use Spatie\LaravelData\Support\Transformation\TransformationContext;
+use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 
 class Property extends Data
 {
     public function __construct(
-        protected string $name,
+        public string $name,
         public Schema $type,
-    ) {
-    }
+    ) {}
 
     public function getName(): string
     {
@@ -35,14 +36,13 @@ class Property extends Data
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
 
         /** @var DataCollection<int,self> */
-        $collection = self::collect(
+        return new DataCollection(
+            self::class,
             array_map(
-                fn (ReflectionProperty $property) => self::fromProperty($property),
+                fn(ReflectionProperty $property) => self::fromProperty($property),
                 $properties
             )
         );
-
-        return $collection;
     }
 
     public static function fromProperty(ReflectionProperty $reflection): self
@@ -50,6 +50,15 @@ class Property extends Data
         return new self(
             name: $reflection->getName(),
             type: Schema::fromReflectionProperty($reflection),
+        );
+    }
+
+    public function transform(
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
+    ): array {
+        return array_filter(
+            parent::transform($transformationContext),
+            fn(mixed $value) => $value !== null
         );
     }
 }

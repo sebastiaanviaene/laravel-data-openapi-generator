@@ -8,6 +8,7 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionType;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 use Spatie\LaravelData\Support\Transformation\TransformationContext;
 use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
@@ -17,10 +18,9 @@ class Content extends Data
 {
     public function __construct(
         /** @var string[] */
-        protected array $types,
+        public array $types,
         public Schema $schema,
-    ) {
-    }
+    ) {}
 
     public static function fromReflection(ReflectionNamedType $type, ReflectionMethod|ReflectionFunction $method): self
     {
@@ -40,16 +40,17 @@ class Content extends Data
         );
     }
 
-    /**
-     * @return array<int|string,mixed>
-     */
     public function transform(
-        null|TransformationContextFactory|TransformationContext $transformValues = null,
-        WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
-        bool $mapPropertyNames = true,
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
     ): array {
+        $transformed = parent::transform($transformationContext);
         return collect($this->types)->mapWithKeys(
-            fn (string $content_type) => [$content_type => parent::transform($transformValues, $wrapExecutionType, $mapPropertyNames)]
+            fn(string $content_type) => [
+                $content_type => array_filter(
+                    $transformed,
+                    fn(mixed $value) => $value !== null && $value !== Optional::create()
+                )
+            ]
         )->toArray();
     }
 

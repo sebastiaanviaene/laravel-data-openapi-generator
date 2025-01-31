@@ -5,6 +5,7 @@ namespace Xolvio\OpenApiGenerator\Data;
 use Illuminate\Routing\Route;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\DataCollection;
+use Spatie\LaravelData\Optional;
 use Spatie\LaravelData\Support\Transformation\TransformationContext;
 use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
@@ -14,7 +15,7 @@ class SecurityScheme extends Data
     public const BEARER_SECURITY_SCHEME = 'bearer';
 
     public function __construct(
-        protected string $scheme,
+        public string $scheme,
         /** @var string[] */
         public array $permissions = [],
     ) {}
@@ -24,7 +25,7 @@ class SecurityScheme extends Data
      */
     public static function fromRoute(Route $route): ?DataCollection
     {
-        $security    = [];
+        $security = [];
         $permissions = static::getPermissions($route);
 
         /** @var string[] $middlewares */
@@ -41,7 +42,7 @@ class SecurityScheme extends Data
             return null;
         }
 
-        return self::collect($security);
+        return new DataCollection(self::class, $security);
     }
 
     /**
@@ -68,9 +69,7 @@ class SecurityScheme extends Data
      * @return array<int|string,mixed>
      */
     public function transform(
-        null|TransformationContextFactory|TransformationContext $transformValues = null,
-        WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
-        bool $mapPropertyNames = true,
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
     ): array {
         return [$this->scheme => $this->permissions];
     }

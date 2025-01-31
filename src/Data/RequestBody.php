@@ -9,13 +9,15 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Data as LaravelData;
+use Spatie\LaravelData\Optional;
+use Spatie\LaravelData\Support\Transformation\TransformationContext;
+use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 
 class RequestBody extends Data
 {
     public function __construct(
         public Content $content,
-    ) {
-    }
+    ) {}
 
     public static function fromRoute(ReflectionMethod|ReflectionFunction $method): ?self
     {
@@ -42,5 +44,14 @@ class RequestBody extends Data
         );
 
         return $parameter ? $parameter->getType() : null;
+    }
+
+    public function transform(
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
+    ): array {
+        return array_filter(
+            parent::transform($transformationContext),
+            fn(mixed $value) => $value !== null && $value !== Optional::create(),
+        );
     }
 }

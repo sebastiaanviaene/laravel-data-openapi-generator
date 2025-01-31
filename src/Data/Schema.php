@@ -19,6 +19,7 @@ use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Data as LaravelData;
 use Spatie\LaravelData\DataCollection;
+use Spatie\LaravelData\Optional;
 use Spatie\LaravelData\Support\DataProperty;
 use Spatie\LaravelData\Support\DataPropertyType;
 use Spatie\LaravelData\Support\Transformation\TransformationContext;
@@ -40,12 +41,12 @@ class Schema extends Data
         public ?string $format = null,
         public ?Schema $items = null,
         public ?string $ref = null,
-        /** @var DataCollection<int,Property> */
+        /** @var DataCollection<int,Property>|null */
         #[DataCollectionOf(Property::class)]
-        protected ?DataCollection $properties = null,
+        public ?DataCollection $properties = null,
     ) {
-        $this->type     = self::CASTS[$this->type] ?? $this->type;
-        $this->nullable = $this->nullable ? $this->nullable : null;
+        $this->type = self::CASTS[$this->type] ?? $this->type;
+        $this->nullable = $this->nullable ?: null;
     }
 
     public static function fromReflectionProperty(ReflectionProperty $property): self
@@ -142,20 +143,15 @@ class Schema extends Data
         );
     }
 
-    /**
-     * @return array<int|string,mixed>
-     */
     public function transform(
-        null|TransformationContextFactory|TransformationContext $transformValues = null,
-        WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
-        bool $mapPropertyNames = true,
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
     ): array {
         $array = array_filter(
-            parent::transform($transformValues, $wrapExecutionType),
-            fn(mixed $value) => null !== $value,
+            parent::transform($transformationContext),
+            fn(mixed $value) => $value !== null && $value !== Optional::create(),
         );
 
-        if ($array['ref'] ?? false) {
+        if (isset($array['ref'])) {
             $array['$ref'] = $array['ref'];
             unset($array['ref']);
 
@@ -165,9 +161,9 @@ class Schema extends Data
             }
         }
 
-        if (null !== $this->properties) {
-            $array['properties'] = collect($this->properties->all())
-                ->mapWithKeys(fn(Property $property) => [$property->getName() => $property->type->transform($transformValues, $wrapExecutionType, $mapPropertyNames)])
+        if ($this->properties !== null) {
+            $array['properties'] = collect($this->properties->items())
+                ->mapWithKeys(fn(Property $property) => [$property->getName() => $property->type->transform($transformationContext)])
                 ->toArray();
         }
 

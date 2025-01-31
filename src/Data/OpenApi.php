@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Log;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 use Spatie\LaravelData\Support\Transformation\TransformationContext;
 use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
@@ -24,9 +25,8 @@ class OpenApi extends Data
         public string $openapi,
         public Info $info,
         /** @var array<string,array<string,Operation>> */
-        protected array $paths,
-    ) {
-    }
+        public array $paths,
+    ) {}
 
     /**
      * @param class-string<Data> $schema
@@ -42,11 +42,11 @@ class OpenApi extends Data
         return static::$schemas;
     }
 
- /** @return array<string,class-string<Data>> */
- public static function getTempSchemas(): array
- {
-     return static::$temp_schemas;
- }
+    /** @return array<string,class-string<Data>> */
+    public static function getTempSchemas(): array
+    {
+        return static::$temp_schemas;
+    }
 
     /**
      * @param array<string,array<string,Route>> $routes
@@ -79,22 +79,18 @@ class OpenApi extends Data
         );
     }
 
-    /**
-     * @return array<string,mixed>
-     */
     public function transform(
-        null|TransformationContextFactory|TransformationContext $transformValues = null,
-        WrapExecutionType                                                                                                                                  $wrapExecutionType = WrapExecutionType::Disabled,
-        bool                                                                                                                                               $mapPropertyNames = true,
+        null|TransformationContextFactory|TransformationContext $transformationContext = null,
     ): array {
         // Double call to make sure all schemas are resolved
         $this->resolveSchemas();
 
+        $transformed = parent::transform($transformationContext);
         $paths = [
             'paths' => count($this->paths) > 0 ?
                 array_map(
-                    fn (array $path) => array_map(
-                        fn (Operation $operation) => $operation->toArray(),
+                    fn(array $path) => array_map(
+                        fn(Operation $operation) => $operation->transform($transformationContext),
                         $path
                     ),
                     $this->paths
@@ -102,20 +98,23 @@ class OpenApi extends Data
                 new stdClass(),
         ];
 
-        return array_merge(
-            parent::transform($transformValues, $wrapExecutionType, $mapPropertyNames),
-            $paths,
-            [
-                'components' => [
-                    'schemas'         => $this->resolveSchemas(),
-                    'securitySchemes' => [
-                        SecurityScheme::BEARER_SECURITY_SCHEME => [
-                            'type'   => 'http',
-                            'scheme' => 'bearer',
+        return array_filter(
+            array_merge(
+                $transformed,
+                $paths,
+                [
+                    'components' => [
+                        'schemas' => $this->resolveSchemas(),
+                        'securitySchemes' => [
+                            SecurityScheme::BEARER_SECURITY_SCHEME => [
+                                'type' => 'http',
+                                'scheme' => 'bearer',
+                            ],
                         ],
                     ],
-                ],
-            ]
+                ]
+            ),
+            fn(mixed $value) => $value !== null && $value !== Optional::create()
         );
     }
 
@@ -133,7 +132,7 @@ class OpenApi extends Data
     protected function resolveSchemas(): array
     {
         $schemas = array_map(
-            fn (string $schema) => Schema::fromDataClass($schema)->toArray(),
+            fn(string $schema) => Schema::fromDataClass($schema)->transform(),
             static::$schemas
         );
 
