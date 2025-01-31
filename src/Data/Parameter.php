@@ -19,8 +19,7 @@ class Parameter extends Data
         public string $description,
         public bool $required,
         public Schema $schema,
-    ) {
-    }
+    ) {}
 
     /**
      * @return null|DataCollection<int,static>
@@ -34,8 +33,8 @@ class Parameter extends Data
             return null;
         }
 
-        return Parameter::collection(array_map(
-            fn (string $parameter) => Parameter::fromParameter($parameter, $method),
+        return Parameter::collect(array_map(
+            fn(string $parameter) => Parameter::fromParameter($parameter, $method),
             $parameters,
         ));
     }
@@ -45,7 +44,7 @@ class Parameter extends Data
         /** @var null|ReflectionParameter */
         $parameter = Arr::first(
             $method->getParameters(),
-            fn (ReflectionParameter $parameter) => $parameter->getName() === $name,
+            fn(ReflectionParameter $parameter) => $parameter->getName() === $name,
         );
 
         if (! $parameter) {
