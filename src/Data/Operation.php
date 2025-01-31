@@ -29,8 +29,7 @@ class Operation extends Data
         /** @var null|DataCollection<int,SecurityScheme> */
         #[DataCollectionOf(SecurityScheme::class)]
         public ?DataCollection $security,
-    ) {
-    }
+    ) {}
 
     public static function fromRoute(Route $route): self
     {
@@ -71,7 +70,7 @@ class Operation extends Data
             description: $description,
             parameters: Parameter::fromRoute($route, $controller_function),
             requestBody: RequestBody::fromRoute($controller_function),
-            responses: Response::collection($responses),
+            responses: new DataCollection(Response::class, $responses),
             security: $security,
         );
     }
@@ -86,7 +85,7 @@ class Operation extends Data
     ): array {
         return array_filter(
             parent::transform($transformValues, $wrapExecutionType, $mapPropertyNames),
-            fn (mixed $value) => null !== $value,
+            fn(mixed $value) => null !== $value,
         );
     }
 }

@@ -17,8 +17,7 @@ class SecurityScheme extends Data
         protected string $scheme,
         /** @var string[] */
         public array $permissions = [],
-    ) {
-    }
+    ) {}
 
     /**
      * @return null|DataCollection<int,static>
@@ -42,7 +41,7 @@ class SecurityScheme extends Data
             return null;
         }
 
-        return self::collection($security);
+        return self::collect($security);
     }
 
     /**

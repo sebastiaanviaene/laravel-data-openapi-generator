@@ -7,9 +7,7 @@ use Spatie\LaravelData\DataCollection;
 
 class Controller extends LaravelController
 {
-    public function noResponse()
-    {
-    }
+    public function noResponse() {}
 
     public function basic(): ReturnData
     {
@@ -40,22 +38,22 @@ class Controller extends LaravelController
     /**
      * @return DataCollection<int,\Xolvio\OpenApiGenerator\Test\ReturnData>
      */
-    public function collection(): DataCollection
+    public function collection()
     {
-        return ReturnData::collection([]);
+        return ReturnData::collect([]);
     }
 
     /**
      * @return DataCollection<int,ReturnData>
      */
-    public function collectionIncompletePath(): DataCollection
+    public function collectionIncompletePath()
     {
-        return ReturnData::collection([]);
+        return ReturnData::collect([]);
     }
 
-    public function collectionFail(): DataCollection
+    public function collectionFail()
     {
-        return ReturnData::collection([]);
+        return ReturnData::collect([]);
     }
 
     public function intParameter(int $parameter): ReturnData
