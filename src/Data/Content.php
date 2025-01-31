@@ -44,7 +44,7 @@ class Content extends Data
      * @return array<int|string,mixed>
      */
     public function transform(
-        bool|TransformationContextFactory|TransformationContext|null $transformValues = true,
+        null|TransformationContextFactory|TransformationContext $transformValues = null,
         WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
         bool $mapPropertyNames = true,
     ): array {
