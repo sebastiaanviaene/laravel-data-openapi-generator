@@ -11,6 +11,8 @@ use ReflectionFunction;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\DataCollection;
+use Spatie\LaravelData\Support\Transformation\TransformationContext;
+use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
 
 class Operation extends Data
@@ -78,7 +80,7 @@ class Operation extends Data
      * @return array<int|string,mixed>
      */
     public function transform(
-        bool $transformValues = true,
+        bool|TransformationContextFactory|TransformationContext|null $transformValues = true,
         WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
         bool $mapPropertyNames = true,
     ): array {

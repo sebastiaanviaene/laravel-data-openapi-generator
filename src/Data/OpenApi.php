@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Log;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Support\Transformation\TransformationContext;
+use Spatie\LaravelData\Support\Transformation\TransformationContextFactory;
 use Spatie\LaravelData\Support\Wrapping\WrapExecutionType;
 use stdClass;
 use Throwable;
@@ -81,9 +83,9 @@ class OpenApi extends Data
      * @return array<string,mixed>
      */
     public function transform(
-        bool $transformValues = true,
-        WrapExecutionType $wrapExecutionType = WrapExecutionType::Disabled,
-        bool $mapPropertyNames = true,
+        bool|TransformationContextFactory|TransformationContext|null $transformValues = true,
+        WrapExecutionType                                                                                                                                  $wrapExecutionType = WrapExecutionType::Disabled,
+        bool                                                                                                                                               $mapPropertyNames = true,
     ): array {
         // Double call to make sure all schemas are resolved
         $this->resolveSchemas();
