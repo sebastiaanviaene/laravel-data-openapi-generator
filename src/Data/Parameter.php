@@ -33,10 +33,13 @@ class Parameter extends Data
             return null;
         }
 
-        return Parameter::collect(array_map(
-            fn(string $parameter) => Parameter::fromParameter($parameter, $method),
-            $parameters,
-        ));
+        return new DataCollection(
+            Parameter::class,
+            array_map(
+                fn(string $parameter) => Parameter::fromParameter($parameter, $method),
+                $parameters,
+            )
+        );
     }
 
     public static function fromParameter(string $name, ReflectionMethod|ReflectionFunction $method): self

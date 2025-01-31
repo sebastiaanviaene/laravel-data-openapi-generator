@@ -68,7 +68,7 @@ class Operation extends Data
 
         return new self(
             description: $description,
-            parameters: new DataCollection(Parameter::class, Parameter::fromRoute($route, $controller_function)),
+            parameters: Parameter::fromRoute($route, $controller_function),
             requestBody: RequestBody::fromRoute($controller_function),
             responses: new DataCollection(Response::class, $responses),
             security: $security,
