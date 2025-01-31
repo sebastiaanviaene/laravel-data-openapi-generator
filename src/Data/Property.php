@@ -35,7 +35,7 @@ class Property extends Data
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
 
         /** @var DataCollection<int,self> */
-        $collection = self::collection(
+        $collection = self::collect(
             array_map(
                 fn (ReflectionProperty $property) => self::fromProperty($property),
                 $properties
